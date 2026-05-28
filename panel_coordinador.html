@@ -214,6 +214,10 @@
         <a href="registro_llegada.html" class="card-condu"><i>🏁</i><span>Llegadas</span></a>
         <a href="taller.html" class="card-condu"><i>🔧</i><span>Taller</span></a>
         <a href="flota.html" class="card-condu"><i>🚗</i><span>Gestión Flota</span></a>
+        <a href="mapa_live.html" class="card-condu" style="border-color: #3b82f6;">
+            <div id="badge-gps" class="badge-rojo" style="background: linear-gradient(135deg,#2563eb,#3b82f6);">0</div>
+            <i>🗺️</i><span>Mapa GPS Live</span>
+        </a>
         <a href="reporte_averia.html" class="card-condu"><i>⚠️</i><span>Reportar Avería</span></a>
         <a href="dashboard.html" class="card-condu"><i>📊</i><span>Admin</span></a>
     </div>
@@ -303,6 +307,19 @@
         const vis = (data || []).filter(s => norm(s.alcance) === 'nacional' || norm(s.regional_solicitante) === reg);
         const b = document.getElementById('badge-apoyo');
         if (vis.length > 0) { b.style.display = 'flex'; b.innerText = vis.length; } else { b.style.display = 'none'; }
+
+        // Badge GPS: cuántos vehículos están transmitiendo en vivo
+        try {
+            const gpsRes = await DB.obtenerTodosPosicionesLive();
+            const activos = (gpsRes.data || []).filter(p => {
+                if (!p.timestamp) return false;
+                const mins = (Date.now() - new Date(p.timestamp).getTime()) / 60000;
+                return mins < 15; // activo si envió en los últimos 15 minutos
+            });
+            const bg = document.getElementById('badge-gps');
+            if (activos.length > 0) { bg.style.display = 'flex'; bg.innerText = activos.length; }
+            else { bg.style.display = 'none'; }
+        } catch(e) {}
     }
 
     function activarRealtime() {
