@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>J.R. — Panel Coordinador</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root { 
             --azul: #001a70; 
@@ -58,7 +60,7 @@
         .welcome-box h1 { color: var(--azul); font-size: 24px; margin: 0; line-height: 1.2; }
         .welcome-box p { color: var(--gris); font-size: 14px; margin-top: 5px; }
 
-        /* ── TARJETA PRINCIPAL (ESPEJO MI CARROZA) ── */
+        /* ── TARJETA PRINCIPAL ── */
         .monitor-mini { 
             width: 100%; 
             max-width: 600px; 
@@ -90,9 +92,11 @@
             border-radius: 8px; 
             text-decoration: none; 
             font-weight: bold; 
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        /* ── GRID DE MENÚ (6 BOTONES) ── */
+        /* ── GRID DE MENÚ ── */
         .menu-conductor { 
             display: grid; 
             grid-template-columns: 1fr 1fr; 
@@ -167,6 +171,148 @@
         .push-body { font-size: 14px; color: #94a3b8; line-height: 1.6; margin-bottom: 20px; }
         .push-btn-ver { width: 100%; padding: 15px; border: none; border-radius: 14px; background: var(--verde); color: white; font-weight: 800; font-size: 15px; cursor: pointer; }
 
+        /* ── MAPA GPS EMBEBIDO ── */
+        .mapa-widget {
+            width: 100%;
+            max-width: 600px;
+            background: var(--blanco);
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .mapa-widget-header {
+            padding: 16px 20px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .mapa-widget-titulo {
+            font-size: 15px;
+            color: var(--azul);
+            font-weight: 700;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+        }
+
+        .dot-live-mini {
+            width: 8px; height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulseLive 1.5s infinite;
+            flex-shrink: 0;
+        }
+        @keyframes pulseLive { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+        .badge-activos-mini {
+            background: var(--azul);
+            color: white;
+            border-radius: 20px;
+            padding: 2px 10px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        #mapa-mini {
+            width: 100%;
+            height: 260px;
+            display: block;
+            background: #e8edf2;
+        }
+
+        .mapa-widget-footer {
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .mapa-update-txt {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .btn-mapa-full {
+            background: var(--azul);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 7px 14px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-mapa-full:hover { background: #002299; }
+
+        /* Popup leaflet light */
+        .leaflet-popup-content-wrapper {
+            background: #ffffff !important;
+            border-radius: 14px !important;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.18) !important;
+            border: none !important;
+            padding: 0 !important;
+            overflow: hidden;
+        }
+        .leaflet-popup-content { margin: 0 !important; }
+        .leaflet-popup-tip { background: #ffffff !important; }
+
+        /* Lista mini de vehículos dentro del widget */
+        .mapa-lista {
+            padding: 8px 12px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            border-bottom: 1px solid #e2e8f0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mapa-lista::-webkit-scrollbar { height: 3px; }
+        .mapa-lista::-webkit-scrollbar-track { background: transparent; }
+        .mapa-lista::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+        .mapa-chip {
+            background: #f0f7ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--azul);
+            white-space: nowrap;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .mapa-chip:hover, .mapa-chip.activo { background: var(--azul); color: white; border-color: var(--azul); }
+        .mapa-chip .chip-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+        .mapa-chip.chip-naranja .chip-dot { background: #f59e0b; }
+        .mapa-chip.chip-rojo .chip-dot { background: #ef4444; }
+
+        .mapa-vacio {
+            text-align: center;
+            padding: 40px 20px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+        .mapa-vacio-ico { font-size: 30px; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -195,7 +341,7 @@
         <p>Panel de Servicios y Reportes Regionales</p>
     </div>
 
-    <!-- ACCIÓN PRINCIPAL (ESPEJO MI CARROZA) -->
+    <!-- ACCIÓN PRINCIPAL -->
     <div class="monitor-mini">
         <h2>Gestión Regional</h2>
         <div style="text-align:center; padding:10px 0;">
@@ -220,6 +366,33 @@
         </a>
         <a href="reporte_averia.html" class="card-condu"><i>⚠️</i><span>Reportar Avería</span></a>
         <a href="dashboard.html" class="card-condu"><i>📊</i><span>Admin</span></a>
+    </div>
+
+    <!-- ══════════════════════════════════════════ -->
+    <!--  MAPA GPS EN VIVO — WIDGET EMBEBIDO        -->
+    <!-- ══════════════════════════════════════════ -->
+    <div class="mapa-widget">
+        <div class="mapa-widget-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <div class="dot-live-mini"></div>
+                <h2 class="mapa-widget-titulo">🗺️ GPS en Vivo</h2>
+                <span class="badge-activos-mini" id="badge-activos-mini">0</span>
+            </div>
+            <a href="mapa_live.html" class="btn-mapa-full">⛶ Pantalla completa</a>
+        </div>
+
+        <!-- Chips de vehículos (scroll horizontal) -->
+        <div class="mapa-lista" id="mapa-lista-chips">
+            <div style="color:#94a3b8; font-size:12px; padding:4px 0;">Cargando...</div>
+        </div>
+
+        <!-- Mapa Leaflet -->
+        <div id="mapa-mini"></div>
+
+        <div class="mapa-widget-footer">
+            <span class="mapa-update-txt" id="mapa-update-txt">Actualizando...</span>
+            <button onclick="cargarMapaMini()" style="background:transparent; border:1px solid #e2e8f0; border-radius:8px; color:var(--azul); font-size:11px; font-weight:700; padding:5px 12px; cursor:pointer;">🔄 Actualizar</button>
+        </div>
     </div>
 
     <!-- LISTAS DE MONITOREO -->
@@ -252,9 +425,21 @@
 
 <script src="db.js"></script>
 <script>
+    /* ─────────────────────────────────────────────
+       VARIABLES GLOBALES
+    ───────────────────────────────────────────── */
     let userSesion = {};
     const norm = str => (str||'').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 
+    // Mapa mini
+    let mapaMini = null;
+    let marcadoresMini = {};
+    let trasladosCacheMini = {};
+    let intervaloMapa = null;
+
+    /* ─────────────────────────────────────────────
+       INIT
+    ───────────────────────────────────────────── */
     window.onload = async () => {
         const sesionRaw = localStorage.getItem('usuario_sesion');
         if (!sesionRaw) { window.location.href = "index.html"; return; }
@@ -263,14 +448,232 @@
         const rol = norm(userSesion.rol);
         if (!rol.includes('coordinador')) { window.location.href = "panel_conductor.html"; return; }
 
-        // SALUDO NOMBRE COMPLETO
         document.getElementById('txt-nombre').innerText = "Hola, " + (userSesion.nombre || "Cesar Augusto Hincapie Prieto");
         document.getElementById('txt-reg-desc').innerText = "📍 Regional: " + (userSesion.regional || "Quindío");
 
-        await Promise.all([cargarApoyos(), cargarAverias(), cargarTraslados(), cargarFlota(), verificarBadges()]);
+        // Iniciar mapa mini antes de cargar datos
+        initMapaMini();
+
+        await Promise.all([cargarApoyos(), cargarAverias(), cargarTraslados(), cargarFlota(), verificarBadges(), cargarMapaMini()]);
         activarRealtime();
+
+        // Actualizar mapa cada 20 segundos
+        intervaloMapa = setInterval(cargarMapaMini, 20000);
     };
 
+    /* ─────────────────────────────────────────────
+       MAPA MINI — INIT
+    ───────────────────────────────────────────── */
+    function initMapaMini() {
+        mapaMini = L.map('mapa-mini', {
+            center: [4.534, -75.674],
+            zoom: 12,
+            zoomControl: false,
+            attributionControl: false,
+            dragging: true,
+            scrollWheelZoom: false,   // evita scroll accidental en mobile
+            doubleClickZoom: true
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            subdomains: 'abcd'
+        }).addTo(mapaMini);
+
+        // Botón de zoom personalizado en esquina inferior derecha
+        L.control.zoom({ position: 'bottomright' }).addTo(mapaMini);
+    }
+
+    /* ─────────────────────────────────────────────
+       MAPA MINI — ÍCONO
+    ───────────────────────────────────────────── */
+    function crearIconoMini(color = '#10b981') {
+        return L.divIcon({
+            className: '',
+            html: `
+                <div style="
+                    width:38px; height:38px;
+                    background:${color};
+                    border:3px solid #fff;
+                    border-radius:50%;
+                    display:flex; align-items:center; justify-content:center;
+                    font-size:18px;
+                    box-shadow:0 3px 10px rgba(0,0,0,0.45);
+                ">🚗</div>`,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -22]
+        });
+    }
+
+    /* ─────────────────────────────────────────────
+       MAPA MINI — CARGAR POSICIONES
+    ───────────────────────────────────────────── */
+    async function cargarMapaMini() {
+        if (!mapaMini) return;
+
+        // Traslados activos para enriquecer popups
+        try {
+            const { data: traslados } = await DB.obtenerTrasladosRecientes(100);
+            trasladosCacheMini = {};
+            (traslados || []).filter(t => !t.hora_de_ingreso || t.hora_de_ingreso === '').forEach(t => {
+                if (t.id_salida) trasladosCacheMini[t.id_salida] = t;
+                if (t.placa)     trasladosCacheMini[t.placa]     = t;
+            });
+        } catch(e) {}
+
+        const { ok, data } = await DB.obtenerTodosPosicionesLive();
+        const ahora = new Date();
+        document.getElementById('mapa-update-txt').textContent =
+            `Actualizado: ${ahora.toLocaleTimeString('es-CO')}`;
+
+        if (!ok || !data || !data.length) {
+            renderizarChips([]);
+            document.getElementById('badge-activos-mini').textContent = '0';
+            return;
+        }
+
+        const validas = data
+            .filter(p => p.lat && p.lng && !isNaN(parseFloat(p.lat)))
+            .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+
+        document.getElementById('badge-activos-mini').textContent = validas.length;
+        renderizarChips(validas);
+        actualizarMarcadoresMini(validas);
+
+        // Actualizar también el badge del botón GPS en el menú
+        const bg = document.getElementById('badge-gps');
+        const activosRecientes = validas.filter(p => minutosDesde(p.timestamp) < 15);
+        if (activosRecientes.length > 0) { bg.style.display = 'flex'; bg.innerText = activosRecientes.length; }
+        else { bg.style.display = 'none'; }
+    }
+
+    /* ─────────────────────────────────────────────
+       MAPA MINI — ACTUALIZAR MARCADORES
+    ───────────────────────────────────────────── */
+    function actualizarMarcadoresMini(posiciones) {
+        const idsActuales = new Set(posiciones.map(p => p.id_salida));
+
+        for (const id in marcadoresMini) {
+            if (!idsActuales.has(id)) {
+                mapaMini.removeLayer(marcadoresMini[id]);
+                delete marcadoresMini[id];
+            }
+        }
+
+        posiciones.forEach(pos => {
+            const lat = parseFloat(pos.lat);
+            const lng = parseFloat(pos.lng);
+            const mins = minutosDesde(pos.timestamp);
+            const color = mins < 2 ? '#10b981' : mins < 10 ? '#f59e0b' : '#ef4444';
+
+            const tr = trasladosCacheMini[pos.id_salida] || trasladosCacheMini[pos.placa] || {};
+            const conductor = tr.conductor || pos.conductor || '—';
+            const destino   = tr.destino   || '—';
+            const motivo    = tr.motivo_de_salida || '—';
+            const fallecido = tr.nombre_del_fallecido || '—';
+            const origen    = tr.origen || '—';
+
+            const popupHtml = `
+                <div style="min-width:200px; padding:14px; background:#fff; border-radius:14px; font-family:'DM Sans',sans-serif;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span style="font-size:20px;">🚗</span>
+                        <div>
+                            <div style="font-size:18px; font-weight:900; color:#001a70; letter-spacing:1px;">${pos.placa || '—'}</div>
+                            <div style="font-size:10px; color:#94a3b8;">${pos.id_salida || '—'}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:12px; font-weight:700; color:#334155; margin-bottom:8px;">👤 ${conductor}</div>
+                    <div style="border-top:1px solid #e2e8f0; margin:6px 0;"></div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin:4px 0;">
+                        <span style="color:#94a3b8; text-transform:uppercase; font-size:10px;">Servicio</span>
+                        <span style="font-weight:700; color:#059669;">${motivo}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin:4px 0;">
+                        <span style="color:#94a3b8; text-transform:uppercase; font-size:10px;">Fallecido</span>
+                        <span style="font-weight:700; color:#334155;">${fallecido}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin:4px 0;">
+                        <span style="color:#94a3b8; text-transform:uppercase; font-size:10px;">Destino</span>
+                        <span style="font-weight:700; color:#2563eb;">📍 ${destino}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:11px; margin:4px 0;">
+                        <span style="color:#94a3b8; text-transform:uppercase; font-size:10px;">Señal</span>
+                        <span style="font-weight:700; color:${color};">hace ${Math.round(mins)} min</span>
+                    </div>
+                    <div style="margin-top:10px;">
+                        <a href="https://maps.google.com/?q=${lat},${lng}" target="_blank"
+                           style="display:block; text-align:center; background:#001a70; color:#fff; border-radius:8px; padding:7px; font-size:12px; font-weight:800; text-decoration:none;">
+                            🗺️ Google Maps
+                        </a>
+                    </div>
+                </div>`;
+
+            if (marcadoresMini[pos.id_salida]) {
+                marcadoresMini[pos.id_salida].setLatLng([lat, lng]);
+                marcadoresMini[pos.id_salida].setIcon(crearIconoMini(color));
+                marcadoresMini[pos.id_salida].getPopup().setContent(popupHtml);
+            } else {
+                const marker = L.marker([lat, lng], { icon: crearIconoMini(color) })
+                    .bindPopup(popupHtml)
+                    .addTo(mapaMini);
+                marcadoresMini[pos.id_salida] = marker;
+            }
+        });
+    }
+
+    /* ─────────────────────────────────────────────
+       MAPA MINI — CHIPS DE VEHÍCULOS
+    ───────────────────────────────────────────── */
+    function renderizarChips(posiciones) {
+        const lista = document.getElementById('mapa-lista-chips');
+        if (!posiciones.length) {
+            lista.innerHTML = `<div style="color:#94a3b8; font-size:12px; padding:4px 0;">📡 Sin vehículos en ruta</div>`;
+            return;
+        }
+        lista.innerHTML = posiciones.map(pos => {
+            const mins = minutosDesde(pos.timestamp);
+            const chipClase = mins < 2 ? '' : mins < 10 ? 'chip-naranja' : 'chip-rojo';
+            const placa = pos.placa || pos.id_salida || '—';
+            return `
+                <div class="mapa-chip ${chipClase}" onclick="centrarMiniEn('${pos.id_salida}')">
+                    <div class="chip-dot"></div>
+                    ${placa}
+                </div>`;
+        }).join('');
+    }
+
+    /* ─────────────────────────────────────────────
+       MAPA MINI — CENTRAR EN VEHÍCULO
+    ───────────────────────────────────────────── */
+    function centrarMiniEn(id_salida) {
+        const marker = marcadoresMini[id_salida];
+        if (!marker) return;
+        const latlng = marker.getLatLng();
+        mapaMini.flyTo(latlng, 15, { animate: true, duration: 1 });
+        marker.openPopup();
+
+        // Resaltar chip activo
+        document.querySelectorAll('.mapa-chip').forEach(c => c.classList.remove('activo'));
+        const chips = document.querySelectorAll('.mapa-chip');
+        chips.forEach(c => {
+            if (c.onclick && c.getAttribute('onclick') && c.getAttribute('onclick').includes(id_salida)) {
+                c.classList.add('activo');
+            }
+        });
+    }
+
+    /* ─────────────────────────────────────────────
+       HELPERS
+    ───────────────────────────────────────────── */
+    function minutosDesde(timestamp) {
+        if (!timestamp) return 9999;
+        return (Date.now() - new Date(timestamp).getTime()) / 60000;
+    }
+
+    /* ─────────────────────────────────────────────
+       CARGA DE TABLAS
+    ───────────────────────────────────────────── */
     async function cargarApoyos() {
         const { data } = await DB.supabase.from('solicitud_apoyo').select('*').eq('coordinador', userSesion.nombre).order('created_at',{ascending:false}).limit(3);
         const t = document.getElementById('tabla-apoyos');
@@ -295,6 +698,7 @@
     async function cargarFlota() {
         const { data } = await DB.supabase.from('carrozas').select('*').order('placa');
         const t = document.getElementById('tabla-flota');
+        if(!data || !data.length) { t.innerHTML = '<tr><td>Sin datos.</td></tr>'; return; }
         t.innerHTML = data.map(c => {
             let cls = c.estado.includes('Taller') ? 'pill-taller' : c.estado.includes('Disponible') ? 'pill-disponible' : 'pill-ruta';
             return `<tr><td><b>${c.placa}</b></td><td style="text-align:right;"><span class="status-pill ${cls}">● ${c.estado}</span></td></tr>`;
@@ -307,21 +711,11 @@
         const vis = (data || []).filter(s => norm(s.alcance) === 'nacional' || norm(s.regional_solicitante) === reg);
         const b = document.getElementById('badge-apoyo');
         if (vis.length > 0) { b.style.display = 'flex'; b.innerText = vis.length; } else { b.style.display = 'none'; }
-
-        // Badge GPS: cuántos vehículos están transmitiendo en vivo
-        try {
-            const gpsRes = await DB.obtenerTodosPosicionesLive();
-            const activos = (gpsRes.data || []).filter(p => {
-                if (!p.timestamp) return false;
-                const mins = (Date.now() - new Date(p.timestamp).getTime()) / 60000;
-                return mins < 15; // activo si envió en los últimos 15 minutos
-            });
-            const bg = document.getElementById('badge-gps');
-            if (activos.length > 0) { bg.style.display = 'flex'; bg.innerText = activos.length; }
-            else { bg.style.display = 'none'; }
-        } catch(e) {}
     }
 
+    /* ─────────────────────────────────────────────
+       REALTIME
+    ───────────────────────────────────────────── */
     function activarRealtime() {
         DB.supabase.channel('coord-push').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notificaciones_apoyo' }, payload => {
             const n = payload.new;
@@ -335,8 +729,16 @@
         }).subscribe();
     }
 
-    function cerrarPush() { document.getElementById('push-overlay').classList.remove('visible'); document.getElementById('push-notif').classList.remove('visible'); }
-    function cerrarSesion() { localStorage.clear(); window.location.href = "index.html"; }
+    function cerrarPush() {
+        document.getElementById('push-overlay').classList.remove('visible');
+        document.getElementById('push-notif').classList.remove('visible');
+    }
+
+    function cerrarSesion() {
+        if (intervaloMapa) clearInterval(intervaloMapa);
+        localStorage.clear();
+        window.location.href = "index.html";
+    }
 </script>
 <script src="config-aplicar.js"></script>
 </body>
