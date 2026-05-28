@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapa en Vivo — J.R. Carrozas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="db.js"></script>
+<style>
+  :root {
+    --negro: #0a0a0a;
+    --gris-oscuro: #141414;
+    --gris-medio: #1a1a1a;
+    --gris-borde: #252525;
+    --dorado: #c9a84c;
+    --dorado-claro: #f0c96e;
+    --blanco: #f5f5f0;
+    --rojo: #e74c3c;
+    --verde: #2ecc71;
+    --naranja: #e67e22;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--negro);
+    color: var(--blanco);
+    font-family: 'Barlow', sans-serif;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--gris-oscuro);
+    border-bottom: 2px solid var(--dorado);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    z-index: 1000;
+  }
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--dorado);
+  }
+  .logo span { color: var(--blanco); }
+  .header-sub {
+    font-size: 11px;
+    color: #666;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .header-acciones {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .btn-refresh {
+    background: var(--gris-medio);
+    border: 1px solid var(--gris-borde);
+    border-radius: 8px;
+    color: var(--blanco);
+    padding: 8px 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .btn-refresh:hover { background: var(--gris-borde); border-color: var(--dorado); }
+  .badge-activos {
+    background: var(--dorado);
+    color: var(--negro);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .dot-live {
+    width: 8px; height: 8px;
+    background: var(--verde);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* LAYOUT PRINCIPAL */
+  .main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+    position: relative;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 300px;
+    background: var(--gris-oscuro);
+    border-right: 1px solid var(--gris-borde);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    z-index: 500;
+  }
+  @media (max-width: 768px) {
+    .sidebar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 220px;
+      border-right: none;
+      border-top: 2px solid var(--gris-borde);
+      z-index: 900;
+    }
+  }
+
+  .sidebar-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--gris-borde);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--dorado);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .lista-vehiculos {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .lista-vehiculos::-webkit-scrollbar { width: 4px; }
+  .lista-vehiculos::-webkit-scrollbar-track { background: transparent; }
+  .lista-vehiculos::-webkit-scrollbar-thumb { background: var(--gris-borde); border-radius: 2px; }
+
+  /* TARJETA VEHÍCULO */
+  .vehiculo-card {
+    background: var(--gris-medio);
+    border: 1px solid var(--gris-borde);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid var(--verde);
+  }
+  .vehiculo-card:hover { border-color: var(--dorado); background: #1f1f1f; }
+  .vehiculo-card.activo-sel { border-color: var(--dorado); background: #201c10; }
+  .vehiculo-card.obsoleto { border-left-color: var(--naranja); opacity: 0.7; }
+  .vehiculo-card.muy-obsoleto { border-left-color: var(--rojo); opacity: 0.5; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .card-placa {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: var(--blanco);
+  }
+  .card-id { font-size: 10px; color: #666; letter-spacing: 1px; }
+  .card-tiempo {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: #27ae6022;
+    color: var(--verde);
+  }
+  .card-tiempo.medio { background: #e67e2222; color: var(--naranja); }
+  .card-tiempo.viejo { background: #e74c3c22; color: var(--rojo); }
+
+  .card-coords { font-size: 11px; color: #555; font-family: monospace; margin-top: 4px; }
+  .btn-centrar {
+    width: 100%;
+    margin-top: 8px;
+    background: transparent;
+    border: 1px solid var(--gris-borde);
+    border-radius: 6px;
+    color: var(--dorado);
+    padding: 5px;
+    font-size: 11px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .btn-centrar:hover { background: var(--gris-borde); }
+
+  /* VACÍO */
+  .vacio {
+    text-align: center;
+    padding: 30px 16px;
+    color: #444;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .vacio-ico { font-size: 32px; margin-bottom: 10px; }
+
+  /* MAPA */
+  #mapa {
+    flex: 1;
+    min-height: 0;
+    background: #111;
+  }
+
+  /* ACTUALIZACIÓN */
+  .update-bar {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(10,10,10,0.85);
+    border: 1px solid var(--gris-borde);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: #666;
+    z-index: 600;
+    backdrop-filter: blur(4px);
+  }
+
+  /* POPUP */
+  .leaflet-popup-content-wrapper {
+    background: var(--gris-oscuro);
+    color: var(--blanco);
+    border: 1px solid var(--dorado);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  }
+  .leaflet-popup-tip { background: var(--gris-oscuro); }
+  .popup-placa { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 900; color: var(--dorado); }
+  .popup-id { font-size: 11px; color: #888; margin-top: 2px; }
+  .popup-sep { border-top: 1px solid var(--gris-borde); margin: 8px 0; }
+  .popup-row { display: flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+  .popup-label { color: #666; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+  .popup-val { font-weight: 600; }
+
+  /* SPINNER */
+  .spinner {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-50%);
+    background: rgba(10,10,10,0.9);
+    border: 1px solid var(--gris-borde);
+    border-radius: 12px;
+    padding: 24px 32px;
+    text-align: center;
+    z-index: 9999;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--dorado);
+  }
+  .spinner.visible { display: block; }
+  .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="logo">J.R. <span>Carrozas</span></div>
+    <div class="header-sub">Centro de Control · Mapa en Vivo</div>
+  </div>
+  <div class="header-acciones">
+    <div class="dot-live"></div>
+    <span id="badge-activos" class="badge-activos">0 activos</span>
+    <button class="btn-refresh" onclick="cargarPosiciones()">
+      🔄 Actualizar
+    </button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      🚗 Vehículos en Ruta
+    </div>
+    <div class="lista-vehiculos" id="lista-vehiculos">
+      <div class="vacio">
+        <div class="vacio-ico">🗺️</div>
+        Cargando posiciones...
+      </div>
+    </div>
+  </div>
+
+  <!-- Mapa -->
+  <div id="mapa"></div>
+
+  <!-- Bar de actualización -->
+  <div class="update-bar" id="update-bar">Actualizando...</div>
+</div>
+
+<div class="spinner" id="spinner">
+  <span class="spin">⚙</span> Cargando mapa...
+</div>
+
+<script>
+  let mapa;
+  let marcadores = {};      // { id_salida: L.marker }
+  let posiciones = [];      // array de datos GPS
+  let intervaloAuto = null;
+  let cardSeleccionada = null;
+
+  // ── ÍCONOS ──
+  function crearIcono(color = '#c9a84c', activo = true) {
+    return L.divIcon({
+      className: '',
+      html: `
+        <div style="
+          width:46px; height:46px;
+          background:${color};
+          border:3px solid #fff;
+          border-radius:50%;
+          display:flex; align-items:center; justify-content:center;
+          font-size:22px;
+          box-shadow:0 3px 12px rgba(0,0,0,0.6);
+          ${activo ? 'animation:pulseMarker 2s infinite;' : ''}
+          position:relative;
+        ">🚗</div>
+        <style>
+          @keyframes pulseMarker {
+            0%,100%{ box-shadow:0 3px 12px rgba(0,0,0,0.6); }
+            50%{ box-shadow:0 3px 20px rgba(201,168,76,0.8); }
+          }
+        </style>
+      `,
+      iconSize: [46, 46],
+      iconAnchor: [23, 23],
+      popupAnchor: [0, -26]
+    });
+  }
+
+  // ── INIT MAPA ──
+  function initMapa() {
+    document.getElementById('spinner').classList.add('visible');
+    mapa = L.map('mapa', {
+      center: [4.534, -75.674],
+      zoom: 12,
+      zoomControl: true,
+      attributionControl: false
+    });
+
+    // Tile oscuro para estética
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd'
+    }).addTo(mapa);
+
+    document.getElementById('spinner').classList.remove('visible');
+    cargarPosiciones();
+
+    // Actualizar automáticamente cada 20 segundos
+    intervaloAuto = setInterval(cargarPosiciones, 20000);
+  }
+
+  // ── CARGAR POSICIONES ──
+  async function cargarPosiciones() {
+    const { ok, data } = await DB.obtenerTodosPosicionesLive();
+    const ahora = new Date();
+    document.getElementById('update-bar').textContent =
+      `Actualizado: ${ahora.toLocaleTimeString('es-CO')}  ·  Auto cada 20s`;
+
+    if (!ok || !data || !data.length) {
+      renderizarLista([]);
+      return;
+    }
+
+    // Filtrar solo con coordenadas válidas y ordenar por recientes
+    const validas = data
+      .filter(p => p.lat && p.lng && !isNaN(parseFloat(p.lat)))
+      .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)));
+
+    posiciones = validas;
+    renderizarLista(validas);
+    actualizarMarcadores(validas);
+
+    document.getElementById('badge-activos').textContent =
+      `${validas.length} activo${validas.length !== 1 ? 's' : ''}`;
+  }
+
+  // ── CALCULAR ANTIGÜEDAD EN MINUTOS ──
+  function minutosDesde(timestamp) {
+    if (!timestamp) return 9999;
+    const ts = new Date(timestamp);
+    return (Date.now() - ts.getTime()) / 60000;
+  }
+
+  // ── ACTUALIZAR MARCADORES ──
+  function actualizarMarcadores(posiciones) {
+    const idsActuales = new Set(posiciones.map(p => p.id_salida));
+
+    // Eliminar marcadores viejos
+    for (const id in marcadores) {
+      if (!idsActuales.has(id)) {
+        mapa.removeLayer(marcadores[id]);
+        delete marcadores[id];
+      }
+    }
+
+    posiciones.forEach(pos => {
+      const lat = parseFloat(pos.lat);
+      const lng = parseFloat(pos.lng);
+      const mins = minutosDesde(pos.timestamp);
+      const color = mins < 2 ? '#2ecc71' : mins < 10 ? '#e67e22' : '#e74c3c';
+
+      const popupHtml = `
+        <div style="min-width:180px">
+          <div class="popup-placa">${pos.placa || '—'}</div>
+          <div class="popup-id">${pos.id_salida || '—'}</div>
+          <div class="popup-sep"></div>
+          <div class="popup-row">
+            <span class="popup-label">Latitud</span>
+            <span class="popup-val">${parseFloat(pos.lat).toFixed(5)}</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Longitud</span>
+            <span class="popup-val">${parseFloat(pos.lng).toFixed(5)}</span>
+          </div>
+          <div class="popup-row">
+            <span class="popup-label">Actualizado</span>
+            <span class="popup-val" style="color:${color}">hace ${Math.round(mins)} min</span>
+          </div>
+          <div style="margin-top:8px">
+            <a href="https://maps.google.com/?q=${lat},${lng}" target="_blank"
+               style="display:block;text-align:center;background:#c9a84c;color:#000;border-radius:6px;padding:5px;font-size:12px;font-weight:700;text-decoration:none;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;">
+              VER EN GOOGLE MAPS
+            </a>
+          </div>
+        </div>
+      `;
+
+      if (marcadores[pos.id_salida]) {
+        marcadores[pos.id_salida].setLatLng([lat, lng]);
+        marcadores[pos.id_salida].setIcon(crearIcono(color, mins < 2));
+        marcadores[pos.id_salida].getPopup().setContent(popupHtml);
+      } else {
+        const marker = L.marker([lat, lng], { icon: crearIcono(color, mins < 2) })
+          .bindPopup(popupHtml)
+          .addTo(mapa);
+        marcadores[pos.id_salida] = marker;
+      }
+    });
+  }
+
+  // ── RENDERIZAR LISTA SIDEBAR ──
+  function renderizarLista(posiciones) {
+    const lista = document.getElementById('lista-vehiculos');
+
+    if (!posiciones.length) {
+      lista.innerHTML = `
+        <div class="vacio">
+          <div class="vacio-ico">📡</div>
+          No hay vehículos transmitiendo<br>en este momento.<br><br>
+          <span style="font-size:11px;color:#333">Los conductores deben abrir<br>tracking_conductor.html</span>
+        </div>`;
+      return;
+    }
+
+    lista.innerHTML = posiciones.map(pos => {
+      const mins = minutosDesde(pos.timestamp);
+      const tiempoClase = mins < 2 ? '' : mins < 10 ? 'medio' : 'viejo';
+      const tiempoTxt = mins < 1 ? 'Ahora' : `${Math.round(mins)} min`;
+      const cardClase = mins < 5 ? '' : mins < 15 ? 'obsoleto' : 'muy-obsoleto';
+
+      return `
+        <div class="vehiculo-card ${cardClase}" id="card-${pos.id_salida}"
+             onclick="centrarEn('${pos.id_salida}')">
+          <div class="card-top">
+            <div>
+              <div class="card-placa">${pos.placa || '—'}</div>
+              <div class="card-id">${pos.id_salida || '—'}</div>
+            </div>
+            <div class="card-tiempo ${tiempoClase}">${tiempoTxt}</div>
+          </div>
+          <div class="card-coords">
+            ${parseFloat(pos.lat).toFixed(4)}, ${parseFloat(pos.lng).toFixed(4)}
+          </div>
+          <button class="btn-centrar" onclick="event.stopPropagation();centrarEn('${pos.id_salida}')">
+            📍 Centrar Mapa
+          </button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── CENTRAR EN VEHÍCULO ──
+  function centrarEn(id_salida) {
+    const pos = posiciones.find(p => p.id_salida === id_salida);
+    if (!pos) return;
+
+    const lat = parseFloat(pos.lat);
+    const lng = parseFloat(pos.lng);
+
+    mapa.flyTo([lat, lng], 16, { animate: true, duration: 1.2 });
+
+    if (marcadores[id_salida]) {
+      marcadores[id_salida].openPopup();
+    }
+
+    // Resaltar card
+    if (cardSeleccionada) {
+      document.getElementById('card-' + cardSeleccionada)?.classList.remove('activo-sel');
+    }
+    document.getElementById('card-' + id_salida)?.classList.add('activo-sel');
+    cardSeleccionada = id_salida;
+  }
+
+  // ── START ──
+  initMapa();
+</script>
+<script src="config-aplicar.js"></script>
+</body>
+</html>

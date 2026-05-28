@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.R. — Registro de Salida Oficial</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --azul: #004a99; --azul-cielo: #e3f2fd; 
+            --blanco: #ffffff; --gris: #546e7a; --verde-wa: #25D366;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--azul-cielo); font-family: 'DM Sans', sans-serif; color: var(--azul); padding: 10px; }
+        .container { max-width: 650px; margin: 0 auto; background: var(--blanco); border-radius: 20px; box-shadow: 0 10px 25px rgba(0,74,153,0.1); overflow: hidden; }
+        .header { background: var(--azul); color: var(--blanco); padding: 20px; text-align: center; }
+        .header h2 { font-size: 18px; }
+        .header p  { font-size: 11px; opacity: 0.8; font-weight: bold; margin-top: 4px; }
+        .content { padding: 20px; }
+        .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gris); margin: 20px 0 10px; padding-bottom: 5px; font-weight: 700; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--azul-cielo); }
+        label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 5px; color: var(--azul); text-transform: uppercase; }
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 12px; border: 2px solid var(--azul-cielo); border-radius: 10px; font-family: inherit; color: var(--azul); background: #f8fbff; font-size: 14px; }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--azul); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        /* Banner de Apoyo Vinculado */
+        #banner-apoyo { display: none; background: #fff9db; border: 1.5px dashed #fab005; color: #856404; padding: 10px; border-radius: 12px; margin-bottom: 15px; font-size: 12px; text-align: center; font-weight: 700; }
+
+        /* ── KIT DE CARRETERA ─────────────────────────────── */
+        .kit-selector { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .kit-opcion {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; border-radius: 12px;
+            border: 2px solid #e3f2fd; cursor: pointer;
+            transition: all 0.2s ease; background: #f8fbff;
+        }
+        .kit-opcion:hover { border-color: #90caf9; background: #e3f2fd; }
+        .kit-opcion input[type="radio"] { display: none; }
+        .kit-opcion .kit-icono { font-size: 22px; flex-shrink: 0; }
+        .kit-opcion .kit-texto { flex: 1; }
+        .kit-opcion .kit-titulo { font-size: 13px; font-weight: 700; color: var(--azul); }
+        .kit-opcion .kit-desc   { font-size: 11px; color: var(--gris); margin-top: 2px; }
+        .kit-opcion .kit-check  { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #90caf9; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .kit-opcion.sel-completo { border-color: #16a34a; background: #f0fdf4; }
+        .kit-opcion.sel-completo .kit-check { background: #16a34a; border-color: #16a34a; }
+        .kit-opcion.sel-completo .kit-check::after { content: '✓'; color: white; font-size: 11px; font-weight: 900; }
+        .kit-opcion.sel-incompleto { border-color: #d97706; background: #fffbeb; }
+        .kit-opcion.sel-incompleto .kit-check { background: #d97706; border-color: #d97706; }
+        .kit-opcion.sel-incompleto .kit-check::after { content: '!'; color: white; font-size: 11px; font-weight: 900; }
+        .kit-opcion.sel-no-tiene { border-color: #dc2626; background: #fef2f2; }
+        .kit-opcion.sel-no-tiene .kit-check { background: #dc2626; border-color: #dc2626; }
+        .kit-opcion.sel-no-tiene .kit-check::after { content: '✗'; color: white; font-size: 11px; font-weight: 900; }
+        .kit-alerta { display: none; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; margin-bottom: 12px; }
+        .kit-alerta.inc { background: #fffbeb; border: 1.5px solid #fcd34d; color: #92400e; display: block; }
+        .kit-alerta.no  { background: #fef2f2; border: 1.5px solid #fca5a5; color: #991b1b; display: block; }
+
+        /* ── ALERTAS VEHÍCULO ────────────────────────────── */
+        .alerta-vehiculo { display: none; border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; font-size: 13px; line-height: 1.6; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+        .alerta-vehiculo.en-taller    { background: #fef2f2; border: 2px solid #ef4444; }
+        .alerta-vehiculo.en-taller .av-titulo { font-size: 17px; font-weight: 900; color: #991b1b; margin: 6px 0 4px; }
+        .av-bloqueo { background: #ef4444; color: white; border-radius: 10px; padding: 10px 14px; margin-top: 12px; font-size: 12px; font-weight: 800; text-align: center; }
+        .alerta-vehiculo.mant-vencido { background: #fef2f2; border: 2px solid #fca5a5; }
+        .alerta-vehiculo.mant-proximo { background: #fffbeb; border: 2px solid #fcd34d; }
+        .alerta-vehiculo.al-dia { background: #f0fdf4; border: 2px solid #86efac; }
+        .km-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.06); border-radius: 8px; padding: 5px 10px; font-size: 13px; font-weight: 800; margin-top: 8px; }
+        .km-progreso-wrap { margin-top: 12px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden; height: 10px; }
+        .km-progreso-bar  { height: 100%; border-radius: 10px; transition: width 0.5s ease; }
+
+        /* ── FOTOS / FIRMA / BOTONES ─────────────────────── */
+        .upload-container { border: 2px dashed var(--azul); border-radius: 15px; padding: 15px; text-align: center; background: #f0f7ff; cursor: pointer; margin-bottom: 12px; }
+        .preview-gallery  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+        .thumb-wrap { position: relative; width: 100%; aspect-ratio: 1/1; }
+        .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; border: 1px solid var(--azul-cielo); }
+        .btn-del { position: absolute; top: -5px; right: -5px; background: #ff4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        canvas { border: 2px dashed var(--azul-cielo); border-radius: 12px; width: 100%; height: 140px; background: #fff; touch-action: none; }
+        .acciones { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+        .btn-accion-guardar { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer; background: var(--azul); color: white; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 14px rgba(0,74,153,0.25); transition: 0.2s; font-family: inherit; }
+        .btn-accion-wa    { width: 100%; padding: 16px; border: none; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer; background: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-accion-fotos { width: 100%; padding: 14px; border: none; border-radius: 14px; font-weight: 700; background: #128C7E; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-accion-volver { width: 100%; padding: 13px; border: 1.5px solid #e2e8f0; border-radius: 14px; font-weight: 600; background: transparent; color: #94a3b8; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .instruccion-fotos { background: #fff9e6; border: 1px solid #f59e0b; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #92400e; text-align: center; display: none; }
+        #progreso-steps { display:none; background:#f0f7ff; border:1px solid #c7dff7; border-radius:12px; padding:12px 15px; margin-bottom:14px; font-size:12px; }
+        #progreso-steps div { padding: 3px 0; color: #546e7a; }
+        #progreso-steps div.ok   { color: #15803d; font-weight: 700; }
+        #progreso-steps div.err  { color: #dc2626; font-weight: 700; }
+        #progreso-steps div.act  { color: #004a99; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2 id="saludo">CARGANDO PERFIL...</h2>
+        <p id="rol-info"></p>
+    </div>
+
+    <div class="content">
+        <div id="banner-apoyo">🤝 SERVICIO DE APOYO DETECTADO: Los datos se han pre-cargado.</div>
+
+        <!-- ── RESPONSABLE ─────────────────────────────── -->
+        <div class="section-title">Datos de Responsable</div>
+        <div class="grid-2">
+            <div>
+                <label>Conductor</label>
+                <input type="text" id="conductor" readonly style="background:#eef5ff; font-weight:bold;">
+            </div>
+            <div>
+                <label>Regional</label>
+                <select id="regional" onchange="cargarPlacas()">
+                    <option value="Risaralda">Risaralda</option>
+                    <option value="Antioquia">Antioquia</option>
+                    <option value="Caldas">Caldas</option>
+                    <option value="Quindío">Quindío</option>
+                    <option value="Valle Norte">Valle Norte</option>
+                    <option value="Valle Centro">Valle Centro</option>
+                    <option value="Valle Sur">Valle Sur</option>
+                    <option value="C/ Marca">Cundinamarca</option>
+                    <option value="Tolima Norte">Tolima Norte</option>
+                    <option value="Valle Centro Palmira">Valle Centro Palmira</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- ── VEHÍCULO ────────────────────────────────── -->
+        <div class="section-title">Información del Vehículo</div>
+        <div class="grid-2">
+            <div>
+                <label>Placa Vehículo</label>
+                <select id="placa" onchange="alSeleccionarPlaca()">
+                    <option value="">Cargando flota...</option>
+                </select>
+            </div>
+            <div>
+                <label>Motivo Salida</label>
+                <select id="motivo" onchange="validarCompatibilidad()">
+                    <option value="Sepelio">Sepelio</option>
+                    <option value="Traslado Nacional">Traslado Nacional</option>
+                    <option value="Recogida De Cuerpo">Recogida De Cuerpo</option>
+                    <option value="Recogida Y traslado De Mascota">Recogida Y traslado De Mascota</option>
+                    <option value="Recogida y Traslado De Restos">Recogida y Traslado De Restos</option>
+                    <option value="Recogida De Cofres">Recogida De Cofres</option>
+                    <option value="Puesta En Velación">Puesta En Velación</option>
+                    <option value="Taller">Taller</option>
+                    <option value="Tramites Empresarial">Tramites Empresarial</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="alerta-vehiculo" id="alerta-vehiculo"></div>
+
+        <!-- ── KIT DE CARRETERA ────────────────────────── -->
+        <div class="section-title">🧰 Kit de Carretera</div>
+        <div class="kit-selector" id="kit-selector">
+            <label class="kit-opcion" id="kit-completo" onclick="seleccionarKit('completo')">
+                <input type="radio" name="kit" value="completo">
+                <div class="kit-icono">✅</div>
+                <div class="kit-texto">
+                    <div class="kit-titulo">Completo — Todo en orden</div>
+                    <div class="kit-desc">Kit reglamentario y extintor vigentes</div>
+                </div>
+                <div class="kit-check" id="check-completo"></div>
+            </label>
+            <label class="kit-opcion" id="kit-incompleto" onclick="seleccionarKit('incompleto')">
+                <input type="radio" name="kit" value="incompleto">
+                <div class="kit-icono">⚠️</div>
+                <div class="kit-texto">
+                    <div class="kit-titulo">Incompleto — Faltan elementos</div>
+                    <div class="kit-desc">Reporte faltantes al coordinador</div>
+                </div>
+                <div class="kit-check" id="check-incompleto"></div>
+            </label>
+            <label class="kit-opcion" id="kit-no-tiene" onclick="seleccionarKit('no-tiene')">
+                <input type="radio" name="kit" value="no-tiene">
+                <div class="kit-icono">🚫</div>
+                <div class="kit-texto">
+                    <div class="kit-titulo">Sin kit — No tiene</div>
+                    <div class="kit-desc">La carroza no cuenta con kit de carretera</div>
+                </div>
+                <div class="kit-check" id="check-no-tiene"></div>
+            </label>
+        </div>
+        <div class="kit-alerta" id="kit-alerta"></div>
+
+        <!-- ── SERVICIO ────────────────────────────────── -->
+        <div class="section-title">Datos del Servicio</div>
+        <label>Nombre del Fallecido</label>
+        <input type="text" id="fallecido" placeholder="Nombre completo">
+
+        <div class="grid-2">
+            <div><label>Lugar de Recogida</label><input type="text" id="clinica" placeholder="Sitio"></div>
+            <div><label>N° Prestación</label><input type="text" id="prestacion" placeholder="Código"></div>
+        </div>
+        <div class="grid-2">
+            <div><label>Origen (Ciudad)</label><input type="text" id="origen" placeholder="De:"></div>
+            <div><label>Destino (Ciudad)</label><input type="text" id="destino" placeholder="Para:"></div>
+        </div>
+
+        <div class="section-title">Control de Kilometraje y Hora</div>
+        <div class="grid-2">
+            <div><label>Hora Salida</label><input type="time" id="hora_salida"></div>
+            <div><label>KM Salida</label><input type="number" id="km_s"></div>
+        </div>
+
+        <div class="section-title">Evidencias Fotográficas</div>
+        <div class="upload-container" onclick="document.getElementById('fotos-input').click()">
+            <span id="upload-text">📸 Toca para subir fotos (Máximo 4)</span>
+            <input type="file" id="fotos-input" accept="image/*" multiple hidden onchange="procesarFotos(this)">
+        </div>
+        <div class="preview-gallery" id="galeria"></div>
+
+        <label>Observaciones de Salida</label>
+        <textarea id="observaciones" rows="2" placeholder="Novedades del vehículo o servicio..."></textarea>
+
+        <div class="section-title">Firma de Responsable</div>
+        <canvas id="canvas"></canvas>
+        <p onclick="borrarFirma()" style="text-align:right; color:#ff4444; font-size:11px; cursor:pointer; margin-top:5px; font-weight:bold;">✖ BORRAR FIRMA</p>
+
+        <div class="section-title">Notificación</div>
+        <label>Nombre del Coordinador (para el reporte)</label>
+        <input type="text" id="nombre-coordinador" placeholder="Ej: Cesar Hincapie">
+
+        <div id="progreso-steps">
+            <div id="step-carroza">⏳ Actualizando estado de carroza...</div>
+            <div id="step-traslado">⏳ Guardando traslado...</div>
+            <div id="step-apoyo" style="display:none;">⏳ Vinculando solicitud de apoyo...</div>
+        </div>
+
+        <div class="acciones">
+            <button class="btn-accion-guardar" id="btn-envio" onclick="guardarTodo()">
+                <span>💾</span> GUARDAR EN SISTEMA
+            </button>
+            <div id="bloque-wa" style="display:none; flex-direction:column; gap:8px;">
+                <button class="btn-accion-wa" id="btn-wa" onclick="enviarWA()">
+                    <span>💬</span> ENVIAR REPORTE POR WHATSAPP
+                </button>
+                <button class="btn-accion-fotos" onclick="compartirFotos()">
+                    <span>📸</span> COMPARTIR FOTOS
+                </button>
+                <div class="instruccion-fotos" id="instruccion-fotos">
+                    <b>📱 Descarga lista.</b> Adjunta las fotos desde tu galería en WhatsApp.
+                </div>
+            </div>
+            <button class="btn-accion-volver" onclick="irAtras()">← Volver</button>
+        </div>
+    </div>
+</div>
+
+<script src="db.js"></script>
+<script>
+    let fotosArray    = [];
+    let datosFinales  = {};
+    let flotaCompleta = [];
+    let kitSeleccionado = ''; 
+    let idApoyoCapturado = null; // Variable para el error de ID
+
+    const canvas = document.getElementById('canvas');
+    const ctx    = canvas.getContext('2d');
+    let dibujando = false;
+
+    // ── FUNCION PRO: RECUPERAR ID DE URL Y LLENAR DATOS ─────
+    function verificarParametrosURL() {
+        const params = new URLSearchParams(window.location.search);
+        idApoyoCapturado = params.get('id'); // El ID que faltaba en el error
+
+        if (idApoyoCapturado) {
+            document.getElementById('banner-apoyo').style.display = 'block';
+            // Llenado inteligente si existen datos en la URL
+            if (params.get('fallecido')) document.getElementById('fallecido').value = params.get('fallecido');
+            if (params.get('origen'))    document.getElementById('origen').value    = params.get('origen');
+            if (params.get('destino'))   document.getElementById('destino').value   = params.get('destino');
+            if (params.get('recogida'))  document.getElementById('clinica').value   = params.get('recogida');
+            if (params.get('motivo'))    document.getElementById('motivo').value    = params.get('motivo');
+        }
+    }
+
+    // ── CARGAR PLACAS FILTRADAS ────────────────────────────
+    async function cargarPlacas() {
+        const select = document.getElementById('placa');
+        const regionalActual = document.getElementById('regional').value;
+        select.innerHTML = '<option value="">Cargando flota...</option>';
+
+        try {
+            const { data, error } = await DB.supabase
+                .from('carrozas')
+                .select('placa, modelo, estado, kilometraje_actual, proximo_mantenimiento, tipo_vehiculo, sede_asignada, sede_intercambio')
+                .order('placa');
+            
+            if (error) throw error;
+            flotaCompleta = data || [];
+
+            const flotaFiltrada = flotaCompleta.filter(c => {
+                const ubicacion = c.sede_intercambio || c.sede_asignada;
+                return ubicacion === regionalActual;
+            });
+
+            if (flotaFiltrada.length > 0) {
+                select.innerHTML = '<option value="">Seleccione placa...</option>' +
+                    flotaFiltrada.map(c => {
+                        const enTaller = (c.estado || '').includes('Taller');
+                        return `<option value="${c.placa}" data-tipo="${c.tipo_vehiculo || ''}" ${enTaller ? 'style="color:#ef4444;"' : ''}>` +
+                            `${c.placa} — ${c.modelo || 'S/M'} (${c.tipo_vehiculo || 'S/T'})${enTaller ? ' 🔧 EN TALLER' : ''}` +
+                        `</option>`;
+                    }).join('');
+            } else {
+                select.innerHTML = '<option value="">Sin vehículos en esta regional</option>';
+            }
+        } catch(e) {
+            select.innerHTML = '<option>Error al cargar placas</option>';
+        }
+    }
+
+    // ── VALIDACIÓN DE COMPATIBILIDAD ──────────────────────
+    function validarCompatibilidad() {
+        const motivo = document.getElementById('motivo').value;
+        const placaSelect = document.getElementById('placa');
+        const optionSel = placaSelect.options[placaSelect.selectedIndex];
+        
+        if (!optionSel || !optionSel.value) return;
+
+        const tipoVehiculo = (optionSel.getAttribute('data-tipo') || "").toUpperCase();
+        let mensajeAlerta = "";
+
+        if (tipoVehiculo.includes("DESTINO FINAL")) {
+            if (motivo.includes("Recogida") || motivo === "Traslado Nacional") {
+                mensajeAlerta = `⚠️ <b>RIESGO DE DAÑO AL ACTIVO</b><br><br>` +
+                                `La carroza <b>${optionSel.value}</b> es de tipo <b>DESTINO FINAL</b> (Perfil Bajo).<br><br>` +
+                                `Usarla para <b>${motivo}</b> puede causar daños en el chasis o desajustes por baches en rutas no urbanas.`;
+            }
+        }
+
+        if (mensajeAlerta !== "") {
+            Swal.fire({
+                title: '¿ESTÁ SEGURO?',
+                html: mensajeAlerta,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#004a99',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cambiar vehículo'
+            }).then((result) => {
+                if (!result.isConfirmed) {
+                    placaSelect.value = ""; 
+                    if(document.getElementById('alerta-vehiculo')) {
+                        document.getElementById('alerta-vehiculo').style.display = 'none';
+                    }
+                }
+            });
+        }
+    }
+
+    // ── ALERTA AL SELECCIONAR PLACA ──────────────────────
+    async function alSeleccionarPlaca() {
+        const placa    = document.getElementById('placa').value;
+        const alertaEl = document.getElementById('alerta-vehiculo');
+        if (!placa) { alertaEl.style.display = 'none'; return; }
+
+        const veh = flotaCompleta.find(c => c.placa === placa);
+        if (!veh)  { alertaEl.style.display = 'none'; return; }
+
+        const estado   = (veh.estado || '').trim();
+        const kmActual = parseInt(veh.kilometraje_actual) || 0;
+        document.getElementById('km_s').value = kmActual;
+
+        validarCompatibilidad();
+
+        if (estado === 'En Taller' || estado === 'En Servicio') {
+            const msjDetalle = estado === 'En Taller' 
+                ? 'La carroza está en taller y <b>no debe ser usada</b>.' 
+                : 'La carroza ya está <b>EN SERVICIO</b> (debe registrar llegada primero).';
+
+            alertaEl.className = 'alerta-vehiculo en-taller';
+            alertaEl.style.display = 'block';
+            alertaEl.innerHTML = `
+                <div style="text-align:center;">
+                    <div class="av-titulo">⚠️ VEHÍCULO NO DISPONIBLE</div>
+                    <div class="av-msg">${msjDetalle}</div>
+                    <div class="av-bloqueo">🚫 RESTRICCIÓN DE SALIDA</div>
+                </div>`;
+            
+            document.getElementById('km_s').value = ""; // Limpia el KM para evitar errores
+            return; // Detiene el proceso aquí
+        }
+
+        try {
+            const { data: mants } = await DB.supabase
+                .from('mantenimientos')
+                .select('kilometraje_servicio, km_proximo_cambio, fecha')
+                .eq('placa', placa)
+                .eq('tipo_servicio', 'Cambio de Aceite')
+                .order('fecha', { ascending: false })
+                .limit(1);
+
+            const ultimoCambio = (mants && mants.length > 0) ? mants[0] : null;
+
+            if (ultimoCambio && ultimoCambio.km_proximo_cambio > 0) {
+                const kmProximo  = parseInt(ultimoCambio.km_proximo_cambio);
+                const kmFaltante = kmProximo - kmActual;
+                const kmRealizdo = kmActual - (parseInt(ultimoCambio.kilometraje_servicio) || 0);
+                const intervalo  = kmProximo - (parseInt(ultimoCambio.kilometraje_servicio) || 0);
+                const porcentaje = Math.min(100, Math.round((kmRealizdo / Math.max(intervalo,1)) * 100));
+                const colorBarra = porcentaje >= 90 ? '#ef4444' : porcentaje >= 70 ? '#f59e0b' : '#10b981';
+
+                if (kmFaltante <= 0) {
+                    alertaEl.className = 'alerta-vehiculo mant-vencido';
+                    alertaEl.innerHTML = `<div class="av-titulo">🚨 ACEITE VENCIDO</div><div class="av-msg">KM actual: ${kmActual}. Debió cambiarse a los ${kmProximo}.</div>`;
+                } else if (kmFaltante <= 500) {
+                    alertaEl.className = 'alerta-vehiculo mant-proximo';
+                    alertaEl.innerHTML = `<div class="av-titulo">⚠️ ACEITE PRÓXIMO</div><div class="av-msg">Faltan ${kmFaltante} KM para el cambio.</div>`;
+                } else {
+                    alertaEl.className = 'alerta-vehiculo al-dia';
+                    alertaEl.innerHTML = `<div class="av-titulo">✅ ACEITE AL DÍA</div><div class="av-msg">Faltan ${kmFaltante} KM. Próximo a los ${kmProximo} KM.</div>`;
+                }
+                alertaEl.innerHTML += `
+                    <div class="km-badge">🚗 KM: ${kmActual.toLocaleString()}</div>
+                    <div class="km-progreso-wrap"><div class="km-progreso-bar" style="width: ${porcentaje}%; background: ${colorBarra};"></div></div>
+                `;
+            } else {
+                alertaEl.className = 'alerta-vehiculo al-dia';
+                alertaEl.innerHTML = `<div class="av-titulo">ℹ️ SIN REGISTRO RECIENTE</div><div class="av-msg">Verifique último cambio de aceite manualmente.</div>`;
+            }
+            alertaEl.style.display = 'block';
+        } catch(e) {
+            alertaEl.style.display = 'none';
+        }
+    }
+
+    function seleccionarKit(valor) {
+        kitSeleccionado = valor;
+        ['completo','incompleto','no-tiene'].forEach(v => {
+            const el = document.getElementById('kit-' + v);
+            const chk = document.getElementById('check-' + v);
+            el.classList.remove('sel-completo','sel-incompleto','sel-no-tiene');
+            chk.innerHTML = '';
+        });
+        const el = document.getElementById('kit-' + valor);
+        const chk = document.getElementById('check-' + valor);
+        el.classList.add('sel-' + valor);
+
+        const alerta = document.getElementById('kit-alerta');
+        alerta.className = 'kit-alerta ' + (valor === 'incompleto' ? 'inc' : valor === 'no-tiene' ? 'no' : '');
+        alerta.innerText = valor === 'incompleto' ? '⚠️ Reporta faltantes al coordinador.' : valor === 'no-tiene' ? '🚨 Prohibido salir sin kit.' : '';
+    }
+
+    function procesarFotos(input) {
+        Array.from(input.files).forEach(f => {
+            if (fotosArray.length < 4) {
+                const reader = new FileReader();
+                reader.onload = e => { fotosArray.push(e.target.result); renderGaleria(); };
+                reader.readAsDataURL(f);
+            }
+        });
+    }
+    function renderGaleria() {
+        document.getElementById('galeria').innerHTML = fotosArray.map((img, i) =>
+            `<div class="thumb-wrap"><img src="${img}"><button class="btn-del" onclick="eliminarFoto(${i})">×</button></div>`
+        ).join('');
+        document.getElementById('upload-text').innerText = '📸 ' + fotosArray.length + ' de 4 fotos';
+    }
+    function eliminarFoto(i) { fotosArray.splice(i, 1); renderGaleria(); }
+
+    const obtenerPos = e => {
+        const r = canvas.getBoundingClientRect();
+        return { x: (e.clientX || e.touches[0].clientX) - r.left, y: (e.clientY || e.touches[0].clientY) - r.top };
+    };
+    const iniciar = e => { dibujando = true; ctx.beginPath(); const p = obtenerPos(e); ctx.moveTo(p.x, p.y); };
+    const mover   = e => { if (!dibujando) return; e.preventDefault(); const p = obtenerPos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = "#004a99"; ctx.lineWidth = 2; ctx.stroke(); };
+    canvas.addEventListener('mousedown', iniciar); canvas.addEventListener('mousemove', mover);
+    window.addEventListener('mouseup', () => dibujando = false);
+    canvas.addEventListener('touchstart', iniciar); canvas.addEventListener('touchmove', mover);
+    function borrarFirma() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    function setStep(id, estado, texto) {
+        const el = document.getElementById(id);
+        if (el) { el.style.display = 'block'; el.className = estado; el.innerText = texto; }
+    }
+
+    // ── GUARDAR TODO ──────────────────────────────────
+    async function guardarTodo() {
+        const btn = document.getElementById('btn-envio');
+        const sesionUser = JSON.parse(localStorage.getItem('usuario_sesion'));
+
+        if (!document.getElementById('placa').value) { Swal.fire("Error", "Selecciona placa", "error"); return; }
+        if (!kitSeleccionado) { Swal.fire("Error", "Selecciona estado del kit", "error"); return; }
+        if (!sesionUser) { alert("Sesión expirada"); return; }
+
+        btn.innerText = "⏳ GUARDANDO..."; btn.disabled = true;
+        document.getElementById('progreso-steps').style.display = 'block';
+
+        // Capturar GPS en el momento exacto de la salida
+        let latSalida = '', lngSalida = '', gpsPrecision = '';
+        try {
+            const gpsRes = await DB.obtenerGPS();
+            if (gpsRes.ok) {
+                latSalida    = String(gpsRes.lat);
+                lngSalida    = String(gpsRes.lng);
+                gpsPrecision = String(Math.round(gpsRes.precision || 0));
+            }
+        } catch(gpsErr) { /* GPS no disponible, continuar sin él */ }
+
+        datosFinales = {
+            regional:      document.getElementById('regional').value,
+            conductor:     document.getElementById('conductor').value,
+            nnum_telefono: sesionUser.telefono || '', 
+            placa:         document.getElementById('placa').value,
+            motivo:        document.getElementById('motivo').value,
+            fallecido:     document.getElementById('fallecido').value,
+            clinica:       document.getElementById('clinica').value,
+            prestacion:    document.getElementById('prestacion').value,
+            origen:        document.getElementById('origen').value,
+            destino:       document.getElementById('destino').value,
+            hora_salida:   document.getElementById('hora_salida').value,
+            km_salida:     document.getElementById('km_s').value,
+            kit_carretera: kitSeleccionado,
+            coordinador:   document.getElementById('nombre-coordinador').value || 'Coordinador',
+            observaciones: document.getElementById('observaciones').value,
+            imagen1: fotosArray[0] || '', imagen2: fotosArray[1] || '',
+            imagen3: fotosArray[2] || '', imagen4: fotosArray[3] || '',
+            firma:       canvas.toDataURL(),
+            lat_salida:  latSalida,
+            lng_salida:  lngSalida,
+            gps_precision: gpsPrecision,
+        };
+
+        try {
+            // Actualizar Carroza
+            setStep('step-carroza', 'act', '⏳ Actualizando vehículo...');
+            await DB.supabase.from('carrozas').update({ 
+                estado: 'En Servicio', 
+                kilometraje_actual: parseInt(datosFinales.km_salida) 
+            }).eq('placa', datosFinales.placa);
+            setStep('step-carroza', 'ok', '✅ Vehículo actualizado');
+            
+            // Guardar Salida
+            setStep('step-traslado', 'act', '⏳ Guardando salida...');
+            const res = await DB.guardarTraslado(datosFinales);
+            if (!res.ok) throw new Error(res.error);
+            setStep('step-traslado', 'ok', '✅ Registro guardado');
+            // Guardar id_salida y placa en sessionStorage para el tracking GPS
+            if (res.id_salida) {
+                sessionStorage.setItem('jr_usuario', JSON.stringify({
+                    ...sesionUser,
+                    id_salida_activo: res.id_salida,
+                    placa_activo:     datosFinales.placa,
+                }));
+                localStorage.setItem('jr_ultimo_traslado', JSON.stringify({
+                    id_salida: res.id_salida,
+                    placa:     datosFinales.placa,
+                }));
+            }
+
+            // Actualizar Solicitud de Apoyo (SI EXISTE EL ID)
+            if (idApoyoCapturado) {
+                setStep('step-apoyo', 'act', '⏳ Vinculando con apoyo...');
+                await DB.supabase.from('solicitud_apoyo').update({
+                    estado: 'Atendido',
+                    placa_asignada: datosFinales.placa,
+                    conductor_asignado: datosFinales.conductor
+                }).eq('id', idApoyoCapturado);
+                setStep('step-apoyo', 'ok', '✅ Solicitud vinculada');
+            }
+
+            btn.innerText = "✓ GUARDADO EXITOSO"; btn.style.background = "#25D366";
+            document.getElementById('bloque-wa').style.display = 'flex';
+        } catch(e) {
+            setStep('step-traslado', 'err', '❌ Error: ' + e.message);
+            btn.disabled = false; btn.innerText = "💾 REINTENTAR";
+        }
+    }
+
+    // ── FUNCION PRO: WHATSAPP COMPLETO ──────────────────
+    function enviarWA() {
+        const hora = new Date().getHours();
+        const saludo = hora < 12 ? "*Buenos Días* ☀️" : hora < 18 ? "*Buenas Tardes* 🌤️" : "*Buenas Noches* 🌙";
+        
+        let estadoCarroza = "✅ Todo En Orden";
+        if (datosFinales.kit_carretera === 'incompleto') estadoCarroza = "⚠️ Pendientes en Kit";
+        else if (datosFinales.kit_carretera === 'no-tiene') estadoCarroza = "🚨 Sin Kit de Carretera";
+
+        const msg = saludo + "\n\n" +
+            "*REPORTES DE SALIDA DE CARROZA* 🚗💨\n" +
+            "───────────────────\n" +
+            "*Regional:* " + datosFinales.regional + "\n" +
+            "*Fecha:* " + new Date().toLocaleDateString('es-CO', {day:'2-digit', month:'2-digit', year:'numeric'}) + "\n" +
+            "*Coordinador:* " + datosFinales.coordinador + "\n" +
+            "*Hora Salida:* " + datosFinales.hora_salida + "\n" +
+            "*Placa:* " + datosFinales.placa + "\n" +
+            "*Motivo:* " + datosFinales.motivo + "\n" +
+            "*Fallecido:* " + (datosFinales.fallecido || '---') + "\n" +
+            "*Recogida:* " + (datosFinales.clinica || '---') + "\n" +
+            "*Origen:* " + (datosFinales.origen || '---') + "\n" +
+            "*Destino:* " + (datosFinales.destino || '---') + "\n" +
+            "*KM Salida:* " + datosFinales.km_salida + "\n" +
+            "*Kit Carretera:* " + datosFinales.kit_carretera + "\n" +
+            "*Conductor:* " + datosFinales.conductor + "\n" +
+            "*Teléfono:* " + (datosFinales.nnum_telefono || '---') + "\n" +
+            "───────────────────\n" +
+            "*📝 Observaciones:* " + (datosFinales.observaciones || 'Sin novedades') + "\n\n" +
+            "*Estado del Vehículo:* " + estadoCarroza;
+            
+        window.open("https://wa.me/?text=" + encodeURIComponent(msg), '_blank');
+    }
+
+    function compartirFotos() {
+        if (fotosArray.length === 0) { alert("No hay fotos para compartir."); return; }
+        Promise.all(fotosArray.map((url, i) => fetch(url).then(r => r.blob()).then(b => new File([b], `img_${i}.jpg`, {type: 'image/jpeg'}))))
+        .then(files => {
+            if (navigator.share) navigator.share({files, title: 'Evidencias'}).catch(descargarFotos);
+            else descargarFotos();
+        }).catch(descargarFotos);
+    }
+
+    function descargarFotos() {
+        fotosArray.forEach((url, i) => {
+            const a = document.createElement('a'); a.href = url; a.download = `foto_${i}.jpg`; a.click();
+        });
+        document.getElementById('instruccion-fotos').style.display = 'block';
+    }
+
+    function irAtras() { window.history.back(); }
+
+    window.onload = async () => {
+        const sesionData = localStorage.getItem('usuario_sesion');
+        if (!sesionData) { window.location.href = "index.html"; return; }
+        const user = JSON.parse(sesionData);
+        document.getElementById('conductor').value = user.nombre;
+        document.getElementById('saludo').innerText = "¡HOLA, " + user.nombre.split(' ')[0].toUpperCase() + "!";
+        if (user.regional) document.getElementById('regional').value = user.regional;
+
+        verificarParametrosURL();
+        await cargarPlacas();
+
+        const now = new Date();
+        document.getElementById('hora_salida').value = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+        canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight;
+    };
+</script>
+<script src="config-aplicar.js"></script>
+</body>
+</html>
