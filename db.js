@@ -23,7 +23,7 @@ const SHEET_MAP = {
 
 function resolveSheet(name) { return SHEET_MAP[name] || name; }
 
-// Fecha limpia: 17/05/2026 
+// Fecha limpia: 17/05/2026
 function fechaHoy() {
   const h = new Date();
   return h.getDate().toString().padStart(2,'0') + '/' +
@@ -389,22 +389,19 @@ const DB = {
   },
 
   // ── GPS: ACTUALIZAR POSICIÓN EN TIEMPO REAL (cada ~20s) ──
- async actualizarGPSLive(id_salida, placa) {
-  const gps = await this.obtenerGPS();
-  if (!gps.ok) return gps;
-
-  const fila = {
-    id_salida,
-    placa,
-    lat:       String(gps.lat),
-    lng:       String(gps.lng),
-    precision: String(gps.precision || ''),
-    timestamp: new Date().toISOString(),
-  };
-
-  return await gasWrite('gps_live', fila, 'update', 'id_salida', id_salida);
-  // El Apps Script hace upsert automático si no existe la fila
-},
+  async actualizarGPSLive(id_salida, placa) {
+    const gps = await this.obtenerGPS();
+    if (!gps.ok) return gps;
+    const fila = {
+      id_salida,
+      placa,
+      lat:       String(gps.lat),
+      lng:       String(gps.lng),
+      precision: String(gps.precision || ''),
+      timestamp: new Date().toISOString(),
+    };
+    return await gasWrite('gps_live', fila, 'update', 'id_salida', id_salida);
+  },
 
   // ── GPS: OBTENER POSICIÓN DE UN TRASLADO ──
   async obtenerPosicionLive(id_salida) {
@@ -422,7 +419,8 @@ const DB = {
       return { ok: true, data: rows };
     } catch(e) { return { ok: false, data: [], error: e.message }; }
   },
- };
+
+};
 
 window.DB = DB;
 
