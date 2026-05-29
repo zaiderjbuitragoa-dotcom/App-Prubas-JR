@@ -422,48 +422,7 @@ const DB = {
       return { ok: true, data: rows };
     } catch(e) { return { ok: false, data: [], error: e.message }; }
   },
-  // ── UPDATE (escritura de fila completa en 1 sola operación) ──
-if (action === "update") {
-  if (!idCol || !idValue)
-    return jsonOut({ ok: false, error: "update requiere idCol e idValue" });
-
-  var colIdx = headers.indexOf(idCol);
-  if (colIdx === -1)
-    return jsonOut({ ok: false, error: "Columna no encontrada: " + idCol });
-
-  var data = sheet.getDataRange().getValues();
-  var rowIndex = -1;
-  var filaActual = null;
-
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][colIdx]).trim() === String(idValue).trim()) {
-      rowIndex = i + 1;
-      filaActual = data[i];
-      break;
-    }
-  }
-
-  if (rowIndex === -1) {
-    // No existe → insertar fila nueva
-    var newRow = headers.map(function(h) {
-      return payload[h] !== undefined ? payload[h] : "";
-    });
-    sheet.appendRow(newRow);
-    return jsonOut({ ok: true, method: "insert-fallback", rowsAffected: 1 });
-  }
-
-  // Construir fila completa fusionando datos actuales + payload nuevo
-  var filaActualizada = headers.map(function(h, i) {
-    return payload[h] !== undefined ? payload[h] : (filaActual[i] || "");
-  });
-
-  // Una sola escritura de toda la fila
-  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([filaActualizada]);
-
-  return jsonOut({ ok: true, method: "update", row: rowIndex, rowsAffected: 1 });
-}
-
-};
+ };
 
 window.DB = DB;
 
