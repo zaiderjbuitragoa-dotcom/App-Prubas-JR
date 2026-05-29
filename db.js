@@ -389,19 +389,22 @@ const DB = {
   },
 
   // ── GPS: ACTUALIZAR POSICIÓN EN TIEMPO REAL (cada ~20s) ──
-  async actualizarGPSLive(id_salida, placa) {
-    const gps = await this.obtenerGPS();
-    if (!gps.ok) return gps;
-    const fila = {
-      id_salida,
-      placa,
-      lat:       String(gps.lat),
-      lng:       String(gps.lng),
-      precision: String(gps.precision || ''),
-      timestamp: new Date().toISOString(),
-    };
-    return await gasWrite('gps_live', fila, 'update', 'id_salida', id_salida);
-  },
+ async actualizarGPSLive(id_salida, placa) {
+  const gps = await this.obtenerGPS();
+  if (!gps.ok) return gps;
+
+  const fila = {
+    id_salida,
+    placa,
+    lat:       String(gps.lat),
+    lng:       String(gps.lng),
+    precision: String(gps.precision || ''),
+    timestamp: new Date().toISOString(),
+  };
+
+  return await gasWrite('gps_live', fila, 'update', 'id_salida', id_salida);
+  // El Apps Script hace upsert automático si no existe la fila
+},
 
   // ── GPS: OBTENER POSICIÓN DE UN TRASLADO ──
   async obtenerPosicionLive(id_salida) {
@@ -419,6 +422,46 @@ const DB = {
       return { ok: true, data: rows };
     } catch(e) { return { ok: false, data: [], error: e.message }; }
   },
+  // ── UPDATE (escritura de fila completa en 1 sola operación) ──
+if (action === "update") {
+  if (!idCol || !idValue)
+    return jsonOut({ ok: false, error: "update requiere idCol e idValue" });
+
+  var colIdx = headers.indexOf(idCol);
+  if (colIdx === -1)
+    return jsonOut({ ok: false, error: "Columna no encontrada: " + idCol });
+
+  var data = sheet.getDataRange().getValues();
+  var rowIndex = -1;
+  var filaActual = null;
+
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][colIdx]).trim() === String(idValue).trim()) {
+      rowIndex = i + 1;
+      filaActual = data[i];
+      break;
+    }
+  }
+
+  if (rowIndex === -1) {
+    // No existe → insertar fila nueva
+    var newRow = headers.map(function(h) {
+      return payload[h] !== undefined ? payload[h] : "";
+    });
+    sheet.appendRow(newRow);
+    return jsonOut({ ok: true, method: "insert-fallback", rowsAffected: 1 });
+  }
+
+  // Construir fila completa fusionando datos actuales + payload nuevo
+  var filaActualizada = headers.map(function(h, i) {
+    return payload[h] !== undefined ? payload[h] : (filaActual[i] || "");
+  });
+
+  // Una sola escritura de toda la fila
+  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([filaActualizada]);
+
+  return jsonOut({ ok: true, method: "update", row: rowIndex, rowsAffected: 1 });
+}
 
 };
 
