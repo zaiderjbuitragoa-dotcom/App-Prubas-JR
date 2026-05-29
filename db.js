@@ -23,7 +23,7 @@ const SHEET_MAP = {
 
 function resolveSheet(name) { return SHEET_MAP[name] || name; }
 
-// Fecha limpia: 17/05/2026
+// Fecha limpia: 17/05/2026 
 function fechaHoy() {
   const h = new Date();
   return h.getDate().toString().padStart(2,'0') + '/' +
